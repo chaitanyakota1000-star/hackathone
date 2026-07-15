@@ -13,6 +13,10 @@ const dotenv = require('dotenv');
 // Load environmental variables
 dotenv.config();
 
+// Custom route imports
+const authRoutes = require('./routes/authRoutes');
+const patientRoutes = require('./routes/patientRoutes');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -47,7 +51,7 @@ app.use(cors({
         }
         return callback(null, true);
     },
-    methods: ['GET', 'POST'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed methods update
     credentials: true
 }));
 
@@ -74,6 +78,10 @@ app.use(express.static(path.join(__dirname, '../public')));
 // 6. Bind Modular Router Configuration
 const apiRouter = require('./routes/api');
 app.use('/api', apiRouter);
+
+// Bind custom API routes (Auth & Patients)
+app.use('/api/auth', authRoutes);
+app.use('/api/patients', patientRoutes);
 
 // Fallback path to index.html for Single-Page operations
 app.get('*', (req, res) => {
