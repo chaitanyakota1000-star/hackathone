@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  # Express Backend Service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: quizsync_app
+    restart: always
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - RATE_LIMIT_WINDOW_MS=900000 # 15 minutes
+      - RATE_LIMIT_MAX_REQUESTS=100
+      - ALLOWED_ORIGINS=http://localhost,http://127.0.0.1
+    # Only expose port to internal docker network. Forces traffic through Nginx proxy.
+    expose:
+      - "3000"
+    security_opt:
+      - no-new-privileges:true
+
+  # Hardened Nginx Reverse Proxy
+  proxy:
+    image: nginx:1.25-alpine
+    container_name: quizsync_proxy
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app
+    security_opt:
+      - no-new-privileges:true

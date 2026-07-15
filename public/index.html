@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizSync | Real-Time Collaborative Team Quiz Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Main Style -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="glow-container">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header glass-panel">
+            <div class="logo-area">
+                <span class="logo-icon">⚡</span>
+                <h1 class="logo-text">Quiz<span>Sync</span></h1>
+            </div>
+            <div class="header-status">
+                <div class="status-indicator">
+                    <span class="status-dot online"></span>
+                    <span class="status-label">Live Connection</span>
+                </div>
+                <div class="team-badge">
+                    <span class="team-label">Team:</span>
+                    <span class="team-name" id="current-team-name">Cyber_Sentinels</span>
+                </div>
+                <div class="points-badge">
+                    <span class="points-icon">🪙</span>
+                    <span class="points-value" id="team-points-display">350</span>
+                    <span class="points-label">pts</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Workspace Grid -->
+        <main class="workspace-grid">
+            <!-- Left Column: Quiz & Powerups -->
+            <section class="main-content-column">
+                <!-- Quiz Area -->
+                <div class="quiz-card glass-panel" id="quiz-section">
+                    <div class="card-header">
+                        <span class="badge category-badge" id="question-category">Security Hardening</span>
+                        <div class="timer-wrapper">
+                            <span class="timer-icon">⏱️</span>
+                            <span class="timer-text" id="quiz-timer">24s</span>
+                        </div>
+                    </div>
+                    <div class="timer-bar-container">
+                        <div class="timer-bar-fill" id="timer-progress" style="width: 80%;"></div>
+                    </div>
+
+                    <div class="question-body">
+                        <h2 class="question-text" id="question-title">Which mount parameter prevents executing any binary files on a mounted filesystem partition?</h2>
+                    </div>
+
+                    <div class="options-grid" id="question-options">
+                        <button class="option-btn" data-option="A">
+                            <span class="option-letter">A</span>
+                            <span class="option-val">nodev</span>
+                        </button>
+                        <button class="option-btn" data-option="B">
+                            <span class="option-letter">B</span>
+                            <span class="option-val">nosuid</span>
+                        </button>
+                        <button class="option-btn selected" data-option="C">
+                            <span class="option-letter">C</span>
+                            <span class="option-val">noexec</span>
+                        </button>
+                        <button class="option-btn" data-option="D">
+                            <span class="option-letter">D</span>
+                            <span class="option-val">ro</span>
+                        </button>
+                    </div>
+
+                    <div class="card-footer">
+                        <p class="quiz-helper-text">Select an answer. Changes are instantly synchronized with your team.</p>
+                        <button class="submit-action-btn" id="btn-submit-answer">Lock In Answer</button>
+                    </div>
+                </div>
+
+                <!-- Shop Area (Power-Up Cart upgrades) -->
+                <div class="shop-card glass-panel">
+                    <div class="card-header">
+                        <h2 class="section-title">⚡ Team Power-Up Shop</h2>
+                        <p class="section-subtitle">Redeem team points for strategic advantages</p>
+                    </div>
+                    
+                    <div class="powerups-grid" id="powerups-container">
+                        <!-- Power-Up Items will be dynamically generated or styled here -->
+                        <div class="powerup-item glass-panel" data-id="double_points">
+                            <div class="powerup-icon">💥</div>
+                            <div class="powerup-details">
+                                <h3 class="powerup-name">Double Points</h3>
+                                <p class="powerup-desc">Doubles score gained on the next correct answer.</p>
+                                <span class="powerup-cost">Cost: 150 pts</span>
+                            </div>
+                            <button class="add-to-cart-btn" onclick="addToCart('double_points', 'Double Points', 150)">Add</button>
+                        </div>
+
+                        <div class="powerup-item glass-panel" data-id="time_freeze">
+                            <div class="powerup-icon">❄️</div>
+                            <div class="powerup-details">
+                                <h3 class="powerup-name">Time Freeze</h3>
+                                <p class="powerup-desc">Pauses countdown timer for 15 seconds.</p>
+                                <span class="powerup-cost">Cost: 100 pts</span>
+                            </div>
+                            <button class="add-to-cart-btn" onclick="addToCart('time_freeze', 'Time Freeze', 100)">Add</button>
+                        </div>
+
+                        <div class="powerup-item glass-panel" data-id="fifty_fifty">
+                            <div class="powerup-icon">🎭</div>
+                            <div class="powerup-details">
+                                <h3 class="powerup-name">50/50 Split</h3>
+                                <p class="powerup-desc">Removes two incorrect options from the quiz.</p>
+                                <span class="powerup-cost">Cost: 200 pts</span>
+                            </div>
+                            <button class="add-to-cart-btn" onclick="addToCart('fifty_fifty', '50/50 Split', 200)">Add</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Column: Sidebar (Leaderboard, Cart Status & Feeds) -->
+            <aside class="sidebar-column">
+                <!-- Cart Drawer -->
+                <div class="cart-panel glass-panel">
+                    <div class="card-header border-bottom">
+                        <h2 class="sidebar-title">🛒 Active Shop Upgrades</h2>
+                        <span class="badge cart-count-badge" id="cart-total-items">0</span>
+                    </div>
+                    
+                    <div class="cart-contents" id="cart-items-list">
+                        <!-- Filled dynamically -->
+                        <div class="empty-cart-msg" id="empty-cart-message">
+                            No upgrades selected. Add power-ups from the shop.
+                        </div>
+                    </div>
+
+                    <div class="cart-summary border-top">
+                        <div class="summary-row">
+                            <span>Total Upgrades:</span>
+                            <span id="cart-item-count">0</span>
+                        </div>
+                        <div class="summary-row total-cost-row">
+                            <span>Total Cost:</span>
+                            <span class="highlight-cost"><span id="cart-total-cost">0</span> pts</span>
+                        </div>
+                        <button class="checkout-btn disabled" id="checkout-button" disabled>Activate Team Upgrades</button>
+                    </div>
+                </div>
+
+                <!-- Leaderboard Card -->
+                <div class="leaderboard-panel glass-panel">
+                    <div class="card-header border-bottom">
+                        <h2 class="sidebar-title">🏆 Live Team Standings</h2>
+                    </div>
+                    <div class="leaderboard-list" id="leaderboard-items">
+                        <div class="leaderboard-item rank-1">
+                            <span class="rank-number">1</span>
+                            <span class="team-name">DevOps_Demons</span>
+                            <span class="team-score">450 pts</span>
+                        </div>
+                        <div class="leaderboard-item current-team">
+                            <span class="rank-number">2</span>
+                            <span class="team-name">Cyber_Sentinels (You)</span>
+                            <span class="team-score" id="leaderboard-team-points">350 pts</span>
+                        </div>
+                        <div class="leaderboard-item">
+                            <span class="rank-number">3</span>
+                            <span class="team-name">Front_End_Fanatics</span>
+                            <span class="team-score">280 pts</span>
+                        </div>
+                        <div class="leaderboard-item">
+                            <span class="rank-number">4</span>
+                            <span class="team-name">Null_Pointers</span>
+                            <span class="team-score">190 pts</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dynamic Log / Feed -->
+                <div class="feed-panel glass-panel">
+                    <div class="card-header border-bottom">
+                        <h2 class="sidebar-title">📢 Real-Time Team Activity</h2>
+                    </div>
+                    <div class="feed-activities" id="activity-feed">
+                        <div class="feed-item">
+                            <span class="feed-time">10s ago</span>
+                            <p class="feed-text"><strong>DevOps_Demons</strong> activated <em>Double Points</em>!</p>
+                        </div>
+                        <div class="feed-item">
+                            <span class="feed-time">1m ago</span>
+                            <p class="feed-text"><strong>Null_Pointers</strong> submitted incorrect answer.</p>
+                        </div>
+                        <div class="feed-item">
+                            <span class="feed-time">3m ago</span>
+                            <p class="feed-text"><strong>Cyber_Sentinels</strong> completed quiz module <em>Linux Hardening Baseline</em>.</p>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>&copy; 2026 QuizSync. Protected by Zero-Trust & OWASP-Hardened Gateways.</p>
+        </footer>
+    </div>
+
+    <!-- Core App Scripts -->
+    <script src="/js/cart.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>
