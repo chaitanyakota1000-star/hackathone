@@ -1,289 +1,208 @@
-/**
- * Developer 2: Client-Side Logic (Quiz Mechanics & Team Synchronizer)
- * Drives state synchronization, submissions, timers, and updates dashboard tables.
- */
+// /public/js/app.js
 
-// Local Application State
-const appState = {
-    currentQuestionId: "q_hardening_01",
-    selectedOption: "C", // default based on initial HTML selection
-    hasSubmitted: false,
-    timerSeconds: 24,
-    timerInterval: null
+let currentUser = {
+    token: localStorage.getItem('shms_token') || null,
+    role: localStorage.getItem('shms_role') || null, 
+    username: localStorage.getItem('shms_username') || null
 };
 
-// Start operations on page load
-document.addEventListener("DOMContentLoaded", () => {
-    bindQuizEvents();
-    startCountdown();
+// Dynamic Workspace Tab Controller (Role Based Visibility Isolation)
+function setupRoleUI() {
+    const role = currentUser.role;
     
-    // Poll for real-time score updates and feeds every 8 seconds
-    setInterval(fetchRealTimeData, 8000);
-});
+    const patientView = document.getElementById('patient-portal');
+    const doctorView = document.getElementById('doctor-portal');
+    const adminView = document.getElementById('admin-portal');
+    const authView = document.getElementById('auth-portal');
+    const navUserDisplay = document.getElementById('nav-user-info');
+    const logoutBtn = document.getElementById('logout-btn');
 
-/**
- * Handle quiz interactions
- */
-function bindQuizEvents() {
-    const optionsGrid = document.getElementById("question-options");
-    const submitBtn = document.getElementById("btn-submit-answer");
+    // Hide everything safely first
+    if (patientView) patientView.style.display = 'none';
+    if (doctorView) doctorView.style.display = 'none';
+    if (adminView) adminView.style.display = 'none';
+    if (authView) authView.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'none';
 
-    if (optionsGrid) {
-        optionsGrid.addEventListener("click", (e) => {
-            if (appState.hasSubmitted) return;
-
-            const clickedBtn = e.target.closest(".option-btn");
-            if (!clickedBtn) return;
-
-            // Remove selected class from all options
-            const options = optionsGrid.querySelectorAll(".option-btn");
-            options.forEach(btn => btn.classList.remove("selected"));
-
-            // Set clicked button as selected
-            clickedBtn.classList.add("selected");
-            appState.selectedOption = clickedBtn.getAttribute("data-option");
-        });
+    if (navUserDisplay) {
+        navUserDisplay.textContent = currentUser.username ? `Active: ${escapeHTML(currentUser.username)}` : '';
     }
 
-    if (submitBtn) {
-        submitBtn.addEventListener("click", submitAnswer);
-    }
-}
-
-/**
- * Start Question Countdown Timer
- */
-function startCountdown() {
-    const timerText = document.getElementById("quiz-timer");
-    const timerProgress = document.getElementById("timer-progress");
-    const totalDuration = 30; // 30 seconds limit
-
-    if (appState.timerInterval) {
-        clearInterval(appState.timerInterval);
-    }
-
-    appState.timerInterval = setInterval(() => {
-        appState.timerSeconds--;
+    // Role state routing matrix
+    if (!currentUser.token) {
+        if (authView) authView.style.display = 'block';
+    } else {
+        if (logoutBtn) logoutBtn.style.display = 'inline-block';
         
-        if (timerText) {
-            timerText.textContent = `${appState.timerSeconds}s`;
+        if (role === 'patient') {
+            if (patientView) patientView.style.display = 'block';
+            renderStagedAppointments(); 
+        } else if (role === 'doctor') {
+            if (doctorView) doctorView.style.display = 'block';
+        } else if (role === 'admin') {
+            if (adminView) adminView.style.display = 'block';
         }
-
-        if (timerProgress) {
-            const percentage = (appState.timerSeconds / totalDuration) * 100;
-            timerProgress.style.width = `${percentage}%`;
-
-            if (appState.timerSeconds <= 5) {
-                timerProgress.style.background = "var(--accent-red)";
-                if (timerText) timerText.style.color = "var(--accent-red)";
-            } else {
-                timerProgress.style.background = "linear-gradient(90deg, var(--accent-violet), var(--accent-cyan))";
-                if (timerText) timerText.style.color = "var(--accent-amber)";
-            }
-        }
-
-        if (appState.timerSeconds <= 0) {
-            clearInterval(appState.timerInterval);
-            handleTimeExpiration();
-        }
-    }, 1000);
+    }
 }
 
-/**
- * Trigger answer submission to backend Express Server
- */
-async function submitAnswer() {
-    if (appState.hasSubmitted) return;
+// Secure Tokenized API Connection Port
+async function secureFetch(url, options = {}) {
+    const headers = {
+        'Content-Type': 'application/json',
+        ...options.headers
+    };
 
-    const submitBtn = document.getElementById("btn-submit-answer");
-    const optionsGrid = document.getElementById("question-options");
-
-    if (!appState.selectedOption) {
-        alert("Please select an option before locking in!");
-        return;
+    if (currentUser.token) {
+        headers['Authorization'] = `Bearer ${currentUser.token}`;
     }
 
     try {
-        appState.hasSubmitted = true;
-        if (submitBtn) {
-            submitBtn.textContent = "Locking In...";
-            submitBtn.disabled = true;
+        const response = await fetch(url, { ...options, headers });
+        
+        // Auto session destruction on token invalidation
+        if (response.status === 401 || response.status === 403) {
+            logoutUser();
+            throw new Error("Session timed out or authorization failed.");
         }
+        return response;
+    } catch (err) {
+        console.error("Network communication blocked or interrupted:", err.message);
+        throw err;
+    }
+}
 
-        const response = await fetch("/api/quiz/submit", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                questionId: appState.currentQuestionId,
-                selectedOption: appState.selectedOption
+// Identity Authentication Controller
+async function loginUser(email, password) {
+    const loginButton = document.getElementById('login-btn');
+    if (loginButton) loginButton.disabled = true;
+
+    try {
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                email: String(email).trim(), 
+                password: String(password) 
             })
         });
 
         const result = await response.json();
 
-        if (response.ok && result.processed) {
-            // Style result validation visually
-            const options = optionsGrid.querySelectorAll(".option-btn");
-            options.forEach(btn => {
-                const optLetter = btn.getAttribute("data-option");
-                if (optLetter === result.correctAnswer) {
-                    btn.style.borderColor = "var(--accent-green)";
-                    btn.style.background = "rgba(145, 233, 0, 0.05)";
-                    btn.querySelector(".option-letter").style.background = "var(--accent-green)";
-                    btn.querySelector(".option-letter").style.color = "var(--text-on-accent)";
-                } else if (optLetter === appState.selectedOption && !result.isCorrect) {
-                    btn.style.borderColor = "var(--accent-red)";
-                    btn.style.background = "rgba(255, 70, 70, 0.05)";
-                    btn.querySelector(".option-letter").style.background = "var(--accent-red)";
-                    btn.querySelector(".option-letter").style.color = "var(--text-on-accent)";
-                }
-            });
-
-            if (result.isCorrect) {
-                if (submitBtn) submitBtn.textContent = "Correct! Locked In";
-                if (submitBtn) submitBtn.style.background = "var(--accent-green)";
-            } else {
-                if (submitBtn) submitBtn.textContent = "Incorrect! Locked In";
-                if (submitBtn) submitBtn.style.background = "var(--accent-red)";
-            }
-
-            // Sync updated points details
-            if (result.updatedPoints !== undefined) {
-                teamPoints = result.updatedPoints;
-                syncTeamPoints(teamPoints);
-            }
-
-            // Stop timer
-            clearInterval(appState.timerInterval);
-            
-            // Sync dashboard boards
-            fetchRealTimeData();
-        } else {
-            appState.hasSubmitted = false;
-            if (submitBtn) {
-                submitBtn.textContent = "Lock In Answer";
-                submitBtn.disabled = false;
-            }
-            alert(`Submission error: ${result.error || "validation failure"}`);
+        if (!response.ok) {
+            throw new Error(result.message || 'Verification rejected.');
         }
 
-    } catch (err) {
-        console.error("Submission network error:", err);
-        appState.hasSubmitted = false;
-        if (submitBtn) {
-            submitBtn.textContent = "Lock In Answer";
-            submitBtn.disabled = false;
-        }
-        alert("Failed to submit to backend API. Is the server running?");
+        currentUser.token = result.token;
+        currentUser.role = result.role;
+        currentUser.username = result.username;
+
+        localStorage.setItem('shms_token', result.token);
+        localStorage.setItem('shms_role', result.role);
+        localStorage.setItem('shms_username', result.username);
+
+        setupRoleUI();
+    } catch (error) {
+        alert("Authentication failed: " + escapeHTML(error.message));
+    } finally {
+        if (loginButton) loginButton.disabled = false;
     }
 }
 
-/**
- * Handle auto-locking or failing when timer hit zero
- */
-function handleTimeExpiration() {
-    appState.hasSubmitted = true;
-    const submitBtn = document.getElementById("btn-submit-answer");
+function logoutUser() {
+    currentUser = { token: null, role: null, username: null };
+    localStorage.removeItem('shms_token');
+    localStorage.removeItem('shms_role');
+    localStorage.removeItem('shms_username');
+    if (window.cart) window.cart.clearCart();
+    setupRoleUI();
+}
+
+// Core Booking Submitter with Action-Throttling (Intercepts Double Click Exploits)
+async function bookStagedAppointments() {
+    const staged = window.cart ? window.cart.getStaged() : [];
+    if (staged.length === 0) {
+        alert("Staging area empty.");
+        return;
+    }
+
+    const submitBtn = document.getElementById('confirm-booking-btn');
     if (submitBtn) {
-        submitBtn.textContent = "Time Expired";
-        submitBtn.disabled = true;
-        submitBtn.style.background = "var(--text-muted)";
+        submitBtn.disabled = true; 
+        submitBtn.textContent = 'Processing...';
     }
-    alert("Time expired! Your team failed to submit in time.");
-}
 
-/**
- * Helper to sync global point layouts from other files (e.g. cart.js checkouts)
- * @param {number} points 
- */
-function syncTeamPoints(points) {
-    const ptsDisplay = document.getElementById("team-points-display");
-    const leaderboardPoints = document.getElementById("leaderboard-team-points");
-    
-    if (ptsDisplay) ptsDisplay.textContent = points;
-    if (leaderboardPoints) leaderboardPoints.textContent = `${points} pts`;
-}
-
-/**
- * Fetch and synchronize data from Express API
- */
-async function fetchRealTimeData() {
     try {
-        const response = await fetch("/api/quiz/state");
-        if (!response.ok) return;
+        const response = await secureFetch('/api/appointments', {
+            method: 'POST',
+            body: JSON.stringify({ appointments: staged })
+        });
 
-        const data = await response.json();
-        
-        // Sync local points
-        if (data.teamPoints !== undefined) {
-            teamPoints = data.teamPoints;
-            syncTeamPoints(teamPoints);
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.message || "Booking rejected by backend.");
         }
 
-        // Render Leaderboard updates
-        if (data.leaderboard) {
-            updateLeaderboardUI(data.leaderboard);
+        alert("Appointments successfully confirmed and saved!");
+        if (window.cart) window.cart.clearCart();
+        renderStagedAppointments();
+    } catch (error) {
+        alert("Action stopped: " + escapeHTML(error.message));
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Book Staged Appointments';
         }
-
-        // Render Activity Feed updates
-        if (data.activities) {
-            updateActivityFeedUI(data.activities);
-        }
-    } catch (e) {
-        // Fail silently during background polling to avoid interrupting flow
-        console.log("Background synchronization paused.");
     }
 }
 
-/**
- * Update Leaderboard Standings
- * @param {Array} list List of teams
- */
-function updateLeaderboardUI(list) {
-    const listContainer = document.getElementById("leaderboard-items");
-    if (!listContainer) return;
+// XSS-Safe Dynamic Screen Renderer
+function renderStagedAppointments() {
+    const container = document.getElementById('staged-list');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    const staged = window.cart ? window.cart.getStaged() : [];
 
-    listContainer.innerHTML = "";
-    list.forEach((item, index) => {
-        const itemDiv = document.createElement("div");
-        const isCurrent = item.team === "Cyber_Sentinels";
-        const rank = index + 1;
+    if (staged.length === 0) {
+        container.innerHTML = '<p class="empty-msg">No appointments currently staged.</p>';
+        return;
+    }
 
-        itemDiv.className = `leaderboard-item rank-${rank} ${isCurrent ? 'current-team' : ''}`;
-        
-        itemDiv.innerHTML = `
-            <span class="rank-number">${rank}</span>
-            <span class="team-name">${item.team} ${isCurrent ? '(You)' : ''}</span>
-            <span class="team-score" ${isCurrent ? 'id="leaderboard-team-points"' : ''}>${item.points} pts</span>
+    staged.forEach(appt => {
+        const item = document.createElement('div');
+        item.className = 'staged-item';
+        item.innerHTML = `
+            <span>
+                <strong>Dr. ${escapeHTML(appt.doctorName)}</strong> 
+                - ${escapeHTML(appt.date)} (${escapeHTML(appt.timeSlot)})
+            </span>
+            <button onclick="removeStaged('${escapeHTML(appt.id)}')" class="remove-btn">Remove</button>
         `;
-        listContainer.appendChild(itemDiv);
+        container.appendChild(item);
     });
 }
 
-/**
- * Update activity feeds
- * @param {Array} list 
- */
-function updateActivityFeedUI(list) {
-    const feedContainer = document.getElementById("activity-feed");
-    if (!feedContainer) return;
-
-    feedContainer.innerHTML = "";
-    list.forEach(act => {
-        const actDiv = document.createElement("div");
-        actDiv.className = "feed-item";
-        actDiv.innerHTML = `
-            <span class="feed-time">${act.time}</span>
-            <p class="feed-text"><strong>${act.team}</strong> ${act.action}</p>
-        `;
-        feedContainer.appendChild(actDiv);
-    });
+function escapeHTML(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;'
+    }[tag] || tag));
 }
 
-// Export functions for access in inline triggers
-window.addToCart = addToCart;
-window.removeFromCart = removeFromCart;
-window.syncTeamPoints = syncTeamPoints;
-window.fetchActivityFeed = fetchRealTimeData;
+window.removeStaged = function(id) {
+    if (window.cart) window.cart.unstageAppointment(id);
+    renderStagedAppointments();
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    setupRoleUI();
+    const submitBtn = document.getElementById('confirm-booking-btn');
+    if (submitBtn) {
+        submitBtn.addEventListener('click', bookStagedAppointments);
+    }
+});
