@@ -1,6 +1,21 @@
 version: '3.8'
 
 services:
+  # MySQL Relational Database Service
+  db:
+    image: mysql:8.0
+    container_name: hospital_db_container
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_DATABASE=hospital_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    security_opt:
+      - no-new-privileges:true
+
   # Express Backend Service
   app:
     build:
@@ -14,9 +29,17 @@ services:
       - RATE_LIMIT_WINDOW_MS=900000 # 15 minutes
       - RATE_LIMIT_MAX_REQUESTS=100
       - ALLOWED_ORIGINS=http://localhost,http://127.0.0.1
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD=password
+      - DB_NAME=hospital_db
+      - DB_PORT=3306
+      - JWT_SECRET=supersecretjwttokenforhackathon
     # Only expose port to internal docker network. Forces traffic through Nginx proxy.
     expose:
       - "3000"
+    depends_on:
+      - db
     security_opt:
       - no-new-privileges:true
 
@@ -33,3 +56,6 @@ services:
       - app
     security_opt:
       - no-new-privileges:true
+
+volumes:
+  db_data:
