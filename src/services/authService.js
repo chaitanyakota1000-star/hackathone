@@ -1,58 +1,49 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-
-// In-memory user database
-const users = [];
-
-// Seed default users for testing and developer local validation
-const salt = bcrypt.genSaltSync(10);
-users.push({
-  id: 1,
-  username: 'patient@hospital.com',
-  password: bcrypt.hashSync('password', salt),
-  role: 'patient'
-});
-users.push({
-  id: 2,
-  username: 'doctor@hospital.com',
-  password: bcrypt.hashSync('password', salt),
-  role: 'doctor'
-});
-users.push({
-  id: 3,
-  username: 'admin@hospital.com',
-  password: bcrypt.hashSync('password', salt),
-  role: 'admin'
-});
+const { getPool } = require('../config/db');
 
 class AuthService {
+  /**
+   * Register a new user
+   */
   async register(username, password, role = 'staff') {
-    // Check if user already exists
-    const exists = users.find(u => u.username === username);
-    if (exists) {
+    const pool = getPool();
+    
+    // Check if user already exists in DB
+    const [existing] = await pool.query('SELECT id FROM users WHERE username = ?', [username]);
+    if (existing.length > 0) {
       throw new Error('User already exists');
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = {
-      id: users.length + 1,
-      username,
-      password: hashedPassword,
-      role
-    };
-
-    users.push(newUser);
     
-    // Return user info (excluding password)
-    return { id: newUser.id, username: newUser.username, role: newUser.role };
+    // Insert user into DB
+    const [result] = await pool.query(
+      'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
+      [username, hashedPassword, role]
+    );
+
+    return { 
+      id: result.insertId, 
+      username, 
+      role 
+    };
   }
 
+  /**
+   * Log in user
+   */
   async login(username, password) {
-    const user = users.find(u => u.username === username);
-    if (!user) {
+    const pool = getPool();
+    
+    // Retrieve user from DB
+    const [rows] = await pool.query('SELECT * FROM users WHERE username = ?', [username]);
+    if (rows.length === 0) {
       throw new Error('Invalid credentials');
     }
+
+    const user = rows[0];
 
     // Validate password
     const isValid = await bcrypt.compare(password, user.password);

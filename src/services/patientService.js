@@ -1,30 +1,44 @@
-// In-memory patient database
-const patients = [
-  { id: 1, name: 'John Doe', age: 34, gender: 'Male', diagnosis: 'Flu', status: 'Admitted', room: '102B' },
-  { id: 2, name: 'Jane Smith', age: 29, gender: 'Female', diagnosis: 'Migraine', status: 'Discharged', room: 'Outpatient' }
-];
+const { getPool } = require('../config/db');
 
 class PatientService {
-  getAllPatients() {
-    return patients;
+  /**
+   * Get all patient records
+   */
+  async getAllPatients() {
+    const pool = getPool();
+    const [rows] = await pool.query('SELECT * FROM patients');
+    return rows;
   }
 
-  getPatientById(id) {
-    const patient = patients.find(p => p.id === parseInt(id));
-    if (!patient) {
+  /**
+   * Get patient record by id
+   */
+  async getPatientById(id) {
+    const pool = getPool();
+    const [rows] = await pool.query('SELECT * FROM patients WHERE id = ?', [parseInt(id)]);
+    if (rows.length === 0) {
       throw new Error('Patient not found');
     }
-    return patient;
+    return rows[0];
   }
 
-  createPatient(patientData) {
+  /**
+   * Create a new patient record
+   */
+  async createPatient(patientData) {
     const { name, age, gender, diagnosis, status, room } = patientData;
     if (!name || !age || !gender || !diagnosis || !status || !room) {
       throw new Error('Missing required patient details');
     }
 
-    const newPatient = {
-      id: patients.length + 1,
+    const pool = getPool();
+    const [result] = await pool.query(
+      'INSERT INTO patients (name, age, gender, diagnosis, status, room) VALUES (?, ?, ?, ?, ?, ?)',
+      [name, parseInt(age), gender, diagnosis, status, room]
+    );
+
+    return {
+      id: result.insertId,
       name,
       age: parseInt(age),
       gender,
@@ -32,34 +46,46 @@ class PatientService {
       status,
       room
     };
-
-    patients.push(newPatient);
-    return newPatient;
   }
 
-  updatePatient(id, updateData) {
-    const patientIndex = patients.findIndex(p => p.id === parseInt(id));
-    if (patientIndex === -1) {
+  /**
+   * Update an existing patient record
+   */
+  async updatePatient(id, updateData) {
+    const pool = getPool();
+    const [existing] = await pool.query('SELECT * FROM patients WHERE id = ?', [parseInt(id)]);
+    if (existing.length === 0) {
       throw new Error('Patient not found');
     }
 
-    // Merge new updates
-    patients[patientIndex] = {
-      ...patients[patientIndex],
-      ...updateData,
-      id: patients[patientIndex].id // Preserve ID
-    };
+    const current = existing[0];
+    const name = updateData.name !== undefined ? updateData.name : current.name;
+    const age = updateData.age !== undefined ? parseInt(updateData.age) : current.age;
+    const gender = updateData.gender !== undefined ? updateData.gender : current.gender;
+    const diagnosis = updateData.diagnosis !== undefined ? updateData.diagnosis : current.diagnosis;
+    const status = updateData.status !== undefined ? updateData.status : current.status;
+    const room = updateData.room !== undefined ? updateData.room : current.room;
 
-    return patients[patientIndex];
+    await pool.query(
+      'UPDATE patients SET name = ?, age = ?, gender = ?, diagnosis = ?, status = ?, room = ? WHERE id = ?',
+      [name, age, gender, diagnosis, status, room, parseInt(id)]
+    );
+
+    return { id: parseInt(id), name, age, gender, diagnosis, status, room };
   }
 
-  deletePatient(id) {
-    const patientIndex = patients.findIndex(p => p.id === parseInt(id));
-    if (patientIndex === -1) {
+  /**
+   * Delete a patient record
+   */
+  async deletePatient(id) {
+    const pool = getPool();
+    const [existing] = await pool.query('SELECT * FROM patients WHERE id = ?', [parseInt(id)]);
+    if (existing.length === 0) {
       throw new Error('Patient not found');
     }
-    const deleted = patients.splice(patientIndex, 1);
-    return deleted[0];
+
+    await pool.query('DELETE FROM patients WHERE id = ?', [parseInt(id)]);
+    return existing[0];
   }
 }
 

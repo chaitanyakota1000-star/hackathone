@@ -13,6 +13,14 @@ const dotenv = require('dotenv');
 // Load environmental variables
 dotenv.config();
 
+// Database configuration
+const { initDB } = require('./config/db');
+
+// Trigger async database table verification & seeding
+initDB()
+  .then(() => console.log('[DB] MySQL Schema verification finished.'))
+  .catch(err => console.error('[DB WARNING] Auto-migrations failed:', err.message));
+
 // Custom route imports
 const authRoutes = require('./routes/authRoutes');
 const patientRoutes = require('./routes/patientRoutes');

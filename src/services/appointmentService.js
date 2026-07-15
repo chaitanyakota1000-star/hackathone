@@ -1,5 +1,4 @@
-// In-memory appointments database
-const appointments = [];
+const { getPool } = require('../config/db');
 
 class AppointmentService {
   /**
@@ -12,6 +11,7 @@ class AppointmentService {
       throw new Error('Appointments list cannot be empty');
     }
 
+    const pool = getPool();
     const booked = [];
 
     for (const appt of appointmentsList) {
@@ -21,26 +21,34 @@ class AppointmentService {
         throw new Error('Missing required appointment parameter details');
       }
 
-      const newAppt = {
-        id: `appt_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-        userId: userId,
+      const id = `appt_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+
+      await pool.query(
+        'INSERT INTO appointments (id, userId, doctorId, doctorName, date, timeSlot) VALUES (?, ?, ?, ?, ?, ?)',
+        [id, userId, String(doctorId), String(doctorName), String(date), String(timeSlot)]
+      );
+
+      booked.push({
+        id,
+        userId,
         doctorId: String(doctorId),
         doctorName: String(doctorName),
         date: String(date),
         timeSlot: String(timeSlot),
         bookedAt: new Date().toISOString()
-      };
-
-      appointments.push(newAppt);
-      booked.push(newAppt);
+      });
     }
 
     return booked;
   }
 
-  // Get appointments for audit / diagnostics
-  getAllAppointments() {
-    return [...appointments];
+  /**
+   * Get all booked appointments
+   */
+  async getAllAppointments() {
+    const pool = getPool();
+    const [rows] = await pool.query('SELECT * FROM appointments');
+    return rows;
   }
 }
 
