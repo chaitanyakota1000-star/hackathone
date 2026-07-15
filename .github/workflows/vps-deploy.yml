@@ -1,0 +1,36 @@
+name: Secure Deploy to VPS
+
+on:
+  push:
+    branches: ["master"] # Triggers deployment when changes are pushed to master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Checkout the code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: SSH onto the VPS and run deployment commands
+      - name: SSH and Rebuild Containers
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_IP }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          script: |
+            # 1. Navigate to the project directory
+            cd /home/${{ secrets.VPS_USER }}/hackathone
+            
+            # 2. Pull down the latest code changes
+            git pull origin master
+            
+            # 3. Stop and recreate the docker containers with the new build
+            docker-compose down
+            docker-compose up -d --build
+            
+            # 4. Activate the host firewall script last to lock down the VPS ports
+            chmod +x configure-ufw.sh
+            sudo ./configure-ufw.sh
