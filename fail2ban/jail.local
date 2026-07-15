@@ -1,0 +1,24 @@
+[nginx-wrecker]
+# Enable this jail
+enabled = true
+
+# Ports to monitor
+port = http,https
+
+# The filter file we created
+filter = nginx-wrecker
+
+# Path to the Nginx access log file on the VPS
+logpath = /var/log/nginx/access.log
+
+# Maximum number of matches before triggering the ban
+maxretry = 3
+
+# Window of time (in seconds) to count the retries (5 minutes = 300s)
+findtime = 300
+
+# Ban duration in seconds (48 hours = 172800s)
+bantime = 172800
+
+# Block IP using UFW rules (adds rule 'insert 1 deny from <ip>')
+banaction = ufw
