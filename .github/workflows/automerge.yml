@@ -1,0 +1,39 @@
+name: Auto Merge Feature Branches
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+
+permissions:
+  contents: write
+
+jobs:
+  automerge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history
+
+      - name: Configure Git Identity
+        run: |
+          git config --global user.name "QuizSync Automerger"
+          git config --global user.email "automerge@quizsync.local"
+
+      - name: Merge feature branch into master
+        run: |
+          # Extract branch name from GITHUB_REF
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          echo "Processing merge for branch: $BRANCH_NAME"
+          
+          # Checkout master and pull latest changes
+          git checkout master
+          git pull origin master
+          
+          # Perform merge
+          git merge origin/$BRANCH_NAME --no-edit -m "ci: auto-merge $BRANCH_NAME into master"
+          
+          # Push updated master to trigger Pages deployment
+          git push origin master
