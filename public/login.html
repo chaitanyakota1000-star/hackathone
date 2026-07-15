@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediSync | Login</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --teal:        #0d9488;
+  --teal-dark:   #0f766e;
+  --teal-light:  #ccfbf1;
+  --teal-mid:    #5eead4;
+  --brown:       #92400e;
+  --brown-light: #fef3c7;
+  --brown-mid:   #d97706;
+  --cream:       #fffbf5;
+  --white:       #ffffff;
+  --sand:        #fdf6ee;
+  --border:      #e8d9c8;
+  --text:        #1c1917;
+  --text-sec:    #44403c;
+  --text-muted:  #78716c;
+  --red:         #dc2626;
+  --green:       #16a34a;
+  --shadow:      0 4px 24px rgba(13,148,136,0.10);
+  --shadow-lg:   0 8px 40px rgba(13,148,136,0.16);
+  --radius:      14px;
+  --radius-sm:   8px;
+  --font-head:   'Outfit', sans-serif;
+  --font-body:   'Inter', sans-serif;
+}
+body{
+  background: var(--sand);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Decorative background blobs ── */
+.blob{position:absolute;border-radius:50%;filter:blur(80px);opacity:0.35;pointer-events:none;}
+.blob-1{width:500px;height:500px;background:radial-gradient(circle,var(--teal-mid),transparent 70%);top:-100px;left:-120px;}
+.blob-2{width:420px;height:420px;background:radial-gradient(circle,var(--brown-mid),transparent 70%);bottom:-80px;right:-80px;}
+.blob-3{width:300px;height:300px;background:radial-gradient(circle,var(--teal-light),transparent 70%);bottom:20%;left:20%;}
+
+/* ── Card ── */
+.card{
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 460px;
+  padding: 40px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Logo ── */
+.logo{display:flex;align-items:center;gap:10px;margin-bottom:28px;justify-content:center;}
+.logo-icon{width:42px;height:42px;background:linear-gradient(135deg,var(--teal),var(--teal-dark));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;box-shadow:0 4px 12px rgba(13,148,136,0.3);}
+.logo-text{font-family:var(--font-head);font-size:1.7rem;font-weight:800;color:var(--text);}
+.logo-text span{color:var(--teal);}
+
+/* ── Tabs ── */
+.tabs{display:flex;background:var(--sand);border:1px solid var(--border);border-radius:var(--radius-sm);padding:4px;gap:4px;margin-bottom:28px;}
+.tab{flex:1;padding:9px;border:none;background:transparent;border-radius:6px;font-family:var(--font-head);font-weight:600;font-size:0.9rem;color:var(--text-muted);cursor:pointer;transition:.2s;}
+.tab.active{background:var(--white);color:var(--teal);box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+
+/* ── Forms ── */
+.form{display:none;flex-direction:column;gap:18px;}
+.form.active{display:flex;}
+.form-row{display:flex;gap:14px;width:100%;}.form-row .field{flex:1;min-width:0;}
+.field{display:flex;flex-direction:column;gap:6px;}
+.field label{font-size:0.8rem;font-weight:600;color:var(--text-sec);text-transform:uppercase;letter-spacing:0.5px;}
+.field input{
+  padding:11px 14px;
+  border:1.5px solid var(--border);
+  border-radius:var(--radius-sm);
+  font-family:var(--font-body);
+  font-size:0.92rem;
+  color:var(--text);
+  background:var(--cream);
+  transition:.2s;
+  outline:none;
+}
+.field input:focus{border-color:var(--teal);background:var(--white);box-shadow:0 0 0 3px rgba(13,148,136,0.1);}
+.field input::placeholder{color:var(--text-muted);}
+.field .hint{font-size:0.72rem;color:var(--text-muted);}
+
+/* ── Error ── */
+.field-error{font-size:0.73rem;color:var(--red);display:none;}
+.field.error input{border-color:var(--red);}
+.field.error .field-error{display:block;}
+
+/* ── Submit btn ── */
+.btn-submit{
+  width:100%;
+  padding:13px;
+  background:linear-gradient(135deg,var(--teal) 0%,var(--teal-dark) 100%);
+  color:#fff;
+  border:none;
+  border-radius:var(--radius-sm);
+  font-family:var(--font-head);
+  font-weight:700;
+  font-size:1rem;
+  cursor:pointer;
+  transition:.2s;
+  box-shadow:0 4px 14px rgba(13,148,136,0.3);
+  margin-top:4px;
+}
+.btn-submit:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(13,148,136,0.4);}
+.btn-submit:active{transform:translateY(0);}
+
+/* ── Divider ── */
+.divider{display:flex;align-items:center;gap:12px;color:var(--text-muted);font-size:0.78rem;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* ── Social btns ── */
+.social-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.btn-social{padding:10px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--white);font-size:0.82rem;font-weight:600;color:var(--text-sec);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:.2s;}
+.btn-social:hover{border-color:var(--teal);color:var(--teal);background:var(--teal-light);}
+
+/* ── Terms ── */
+.terms{font-size:0.73rem;color:var(--text-muted);text-align:center;line-height:1.5;}
+.terms a{color:var(--teal);text-decoration:none;font-weight:600;}
+
+/* ── Success overlay ── */
+.success-msg{display:none;flex-direction:column;align-items:center;gap:14px;text-align:center;padding:20px 0;}
+.success-icon{width:60px;height:60px;background:linear-gradient(135deg,var(--teal),var(--teal-dark));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.8rem;box-shadow:0 4px 16px rgba(13,148,136,0.35);}
+.success-title{font-family:var(--font-head);font-size:1.3rem;font-weight:700;color:var(--text);}
+.success-sub{font-size:0.85rem;color:var(--text-muted);}
+</style>
+</head>
+<body>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+
+<div class="card">
+
+  <!-- Logo -->
+  <div class="logo">
+    <div class="logo-icon">🏥</div>
+    <span class="logo-text">Medi<span>Sync</span></span>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" id="tab-login" onclick="switchTab('login')">Login</button>
+    <button class="tab" id="tab-signup" onclick="switchTab('signup')">Sign Up</button>
+  </div>
+
+  <!-- ── LOGIN FORM ── -->
+  <form class="form active" id="form-login" onsubmit="handleLogin(event)">
+    <div class="field" id="f-login-email">
+      <label>Email Address</label>
+      <input type="email" id="login-email" placeholder="you@example.com" autocomplete="email">
+      <span class="field-error">Please enter a valid email.</span>
+    </div>
+    <div class="field" id="f-login-pass">
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="Enter your password" autocomplete="current-password">
+      <span class="field-error">Password must be at least 6 characters.</span>
+    </div>
+    <button type="submit" class="btn-submit" id="btn-login">Login to MediSync</button>
+    <div class="divider">or continue with</div>
+    <div class="social-btns">
+      <button type="button" class="btn-social" onclick="socialLogin('Google')">🌐 Google</button>
+      <button type="button" class="btn-social" onclick="socialLogin('GitHub')">🐙 GitHub</button>
+    </div>
+  </form>
+
+  <!-- ── SIGNUP FORM ── -->
+  <form class="form" id="form-signup" onsubmit="handleSignup(event)">
+    <div class="form-row">
+      <div class="field" id="f-first">
+        <label>First Name</label>
+        <input type="text" id="signup-first" placeholder="Abhijith" autocomplete="given-name">
+        <span class="field-error">Required.</span>
+      </div>
+      <div class="field" id="f-last">
+        <label>Last Name</label>
+        <input type="text" id="signup-last" placeholder="Kasyap" autocomplete="family-name">
+        <span class="field-error">Required.</span>
+      </div>
+    </div>
+    <div class="field" id="f-email">
+      <label>Email Address</label>
+      <input type="email" id="signup-email" placeholder="you@example.com" autocomplete="email">
+      <span class="field-error">Please enter a valid email.</span>
+    </div>
+    <div class="field" id="f-phone">
+      <label>Phone Number <span id="phone-counter" style="font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0;">(0/10)</span></label>
+      <input type="tel" id="signup-phone" placeholder="10-digit number" autocomplete="tel" maxlength="10" inputmode="numeric" pattern="[0-9]{10}">
+      <span class="field-error" id="phone-error">Enter a valid 10-digit phone number.</span>
+      <span class="hint" id="phone-hint">Digits only, no spaces or country code.</span>
+    </div>
+    <div class="field" id="f-pass">
+      <label>Password</label>
+      <input type="password" id="signup-pass" placeholder="Min. 6 characters" autocomplete="new-password">
+      <span class="field-error">Password must be at least 6 characters.</span>
+    </div>
+    <div class="field" id="f-confirm">
+      <label>Confirm Password</label>
+      <input type="password" id="signup-confirm" placeholder="Repeat password" autocomplete="new-password">
+      <span class="field-error">Passwords do not match.</span>
+    </div>
+    <button type="submit" class="btn-submit" id="btn-signup">Create Account</button>
+    <p class="terms">By signing up you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.</p>
+  </form>
+
+  <!-- Success -->
+  <div class="success-msg" id="success-msg">
+    <div class="success-icon">✓</div>
+    <div class="success-title" id="success-title">Welcome back!</div>
+    <div class="success-sub" id="success-sub">Redirecting to QuizSync...</div>
+  </div>
+
+</div>
+
+<script>
+// ── Tab switch ─────────────────────────────────────────────────────────────
+function switchTab(t){
+  document.getElementById('tab-login').classList.toggle('active', t==='login');
+  document.getElementById('tab-signup').classList.toggle('active', t==='signup');
+  document.getElementById('form-login').classList.toggle('active', t==='login');
+  document.getElementById('form-signup').classList.toggle('active', t==='signup');
+}
+
+// ── Validation helpers ─────────────────────────────────────────────────────
+function setErr(id, show){ document.getElementById(id).classList.toggle('error', show); }
+function validEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+function validPhone(p){ return /^\d{10}$/.test(p); }
+
+// ── Phone input — digits only, live counter ────────────────────────────────
+document.addEventListener('DOMContentLoaded', function(){
+  const phoneInput = document.getElementById('signup-phone');
+  const counter    = document.getElementById('phone-counter');
+  const hint       = document.getElementById('phone-hint');
+  if(!phoneInput) return;
+
+  phoneInput.addEventListener('input', function(){
+    // Strip anything that isn't a digit
+    let digits = this.value.replace(/\D/g,'');
+    if(digits.length > 10) digits = digits.slice(0,10);
+    this.value = digits;
+
+    // Update counter colour
+    const len = digits.length;
+    counter.textContent = `(${len}/10)`;
+    counter.style.color = len === 10 ? '#16a34a' : len >= 8 ? '#d97706' : 'var(--text-muted)';
+
+    // Show/hide hint vs error live
+    if(len > 0 && len < 10){
+      hint.style.display = 'none';
+      document.getElementById('f-phone').classList.remove('error');
+    } else if(len === 10){
+      hint.style.display = 'none';
+      document.getElementById('f-phone').classList.remove('error');
+    } else {
+      hint.style.display = 'block';
+    }
+  });
+});
+
+// ── Login ──────────────────────────────────────────────────────────────────
+function handleLogin(e){
+  e.preventDefault();
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  let ok = true;
+  setErr('f-login-email', !validEmail(email)); if(!validEmail(email)) ok=false;
+  setErr('f-login-pass',  pass.length < 6);    if(pass.length < 6)    ok=false;
+  if(!ok) return;
+
+  // Check stored user
+  const stored = JSON.parse(localStorage.getItem('qs_user')||'null');
+  if(stored && stored.email===email && stored.password===pass){
+    loginSuccess(stored);
+  } else if(!stored){
+    // First time — auto-create guest session
+    const guest = {firstName:'Guest', lastName:'User', email, phone:'', password:pass};
+    localStorage.setItem('qs_user', JSON.stringify(guest));
+    loginSuccess(guest);
+  } else {
+    setErr('f-login-pass', true);
+    document.querySelector('#f-login-pass .field-error').textContent = 'Incorrect email or password.';
+  }
+}
+
+// ── Signup ─────────────────────────────────────────────────────────────────
+function handleSignup(e){
+  e.preventDefault();
+  const first   = document.getElementById('signup-first').value.trim();
+  const last    = document.getElementById('signup-last').value.trim();
+  const email   = document.getElementById('signup-email').value.trim();
+  const phone   = document.getElementById('signup-phone').value.trim();
+  const pass    = document.getElementById('signup-pass').value;
+  const confirm = document.getElementById('signup-confirm').value;
+  let ok = true;
+
+  setErr('f-first',   !first);                         if(!first)                 ok=false;
+  setErr('f-last',    !last);                          if(!last)                  ok=false;
+  setErr('f-email',   !validEmail(email));             if(!validEmail(email))     ok=false;
+
+  // Phone — must be exactly 10 digits if provided (required)
+  const phoneErr = !validPhone(phone);
+  setErr('f-phone', phoneErr);
+  if(phoneErr){
+    document.getElementById('phone-error').textContent = phone.length === 0
+      ? 'Phone number is required.'
+      : `Enter exactly 10 digits (you entered ${phone.length}).`;
+    ok = false;
+  }
+
+  setErr('f-pass',    pass.length < 6);                if(pass.length < 6)        ok=false;
+  setErr('f-confirm', pass !== confirm);               if(pass !== confirm)       ok=false;
+  if(!ok) return;
+
+  const user = {firstName:first, lastName:last, email, phone, password:pass};
+  localStorage.setItem('qs_user', JSON.stringify(user));
+  loginSuccess(user);
+}
+
+// ── Success + redirect ─────────────────────────────────────────────────────
+function loginSuccess(user){
+  localStorage.setItem('qs_loggedin','true');
+  document.getElementById('form-login').classList.remove('active');
+  document.getElementById('form-signup').classList.remove('active');
+  document.getElementById('success-msg').style.display='flex';
+  document.getElementById('success-title').textContent = `Welcome, ${user.firstName}!`;
+  document.getElementById('success-sub').textContent = 'Redirecting to MediSync...';
+  setTimeout(()=>{ window.location.href = 'index.html'; }, 1500);
+}
+
+// ── Social (mock) ──────────────────────────────────────────────────────────
+function socialLogin(provider){
+  const user = {firstName: provider==='Google'?'Google':'GitHub', lastName:'User', email:`user@${provider.toLowerCase()}.com`, phone:'', password:''};
+  localStorage.setItem('qs_user', JSON.stringify(user));
+  loginSuccess(user);
+}
+
+// ── If already logged in skip to dashboard ────────────────────────────────
+if(localStorage.getItem('qs_loggedin')==='true'){
+  window.location.href = 'index.html';
+}
+</script>
+</body>
+</html>
