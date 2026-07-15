@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediSync | Hospital Operations Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ── */
+*{margin:0;padding:0;box-sizing:border-box;}
+
+/* ── Variables ── */
+:root{
+  --blue:#1a73e8;
+  --blue-dark:#1558c0;
+  --blue-light:#e8f0fe;
+  --green:#1aaf6c;
+  --green-light:#e6f9f0;
+  --red:#e53e3e;
+  --red-light:#fff0f0;
+  --orange:#f6820d;
+  --orange-light:#fff4e5;
+  --amber:#c9940a;
+  --amber-light:#fffaeb;
+  --bg:#f0f4f8;
+  --surface:#ffffff;
+  --surface-alt:#f7fafc;
+  --border:#d1e3f0;
+  --text:#1a202c;
+  --text-sec:#4a5568;
+  --text-muted:#718096;
+  --radius:12px;
+  --radius-sm:8px;
+  --shadow:0 2px 12px rgba(26,115,232,.09);
+  --shadow-hover:0 6px 24px rgba(26,115,232,.16);
+  --font-head:'Outfit',sans-serif;
+  --font-body:'Inter',sans-serif;
+}
+
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);min-height:100vh;}
+
+/* ── Layout ── */
+.wrap{max-width:1380px;margin:0 auto;padding:24px;display:flex;flex-direction:column;gap:22px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ===== HEADER ===== -->
+<style>
+.header{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 28px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;}
+.logo-area{display:flex;align-items:center;gap:10px;}
+.logo-icon{font-size:1.9rem;}
+.logo-text{font-family:var(--font-head);font-size:1.7rem;font-weight:800;color:var(--text);}
+.logo-text span{color:var(--blue);}
+.nav{display:flex;gap:6px;}
+.nav a{text-decoration:none;font-size:.84rem;font-weight:600;color:var(--text-muted);padding:6px 14px;border-radius:var(--radius-sm);border:1px solid transparent;transition:.2s;}
+.nav a:hover{color:var(--blue);background:var(--blue-light);}
+.nav a.active{color:var(--blue);background:var(--blue-light);border-color:rgba(26,115,232,.3);}
+.hstatus{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.status-pill{display:flex;align-items:center;gap:7px;background:var(--green-light);border:1px solid rgba(26,175,108,.3);padding:6px 12px;border-radius:50px;}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.status-pill span{font-size:.8rem;font-weight:600;color:var(--green);}
+.ward-pill{display:flex;align-items:center;gap:7px;background:var(--blue-light);border:1px solid rgba(26,115,232,.25);padding:7px 14px;border-radius:var(--radius-sm);}
+.ward-pill .lbl{font-size:.82rem;color:var(--text-muted);}
+.ward-pill .val{font-size:.82rem;font-weight:700;color:var(--blue);}
+.alert-pill{display:flex;align-items:center;gap:7px;background:var(--red-light);border:1px solid rgba(229,62,62,.3);padding:7px 14px;border-radius:var(--radius-sm);animation:palert 2s infinite;}
+@keyframes palert{0%,100%{box-shadow:0 0 0 0 rgba(229,62,62,.3)}50%{box-shadow:0 0 0 5px rgba(229,62,62,0)}}
+.alert-pill .val{font-weight:700;color:var(--red);font-size:.9rem;}
+.alert-pill .lbl{font-size:.82rem;color:var(--red);}
+</style>
+<header class="header">
+  <div class="logo-area">
+    <span class="logo-icon">🏥</span>
+    <h1 class="logo-text">Medi<span>Sync</span></h1>
+  </div>
+  <nav class="nav">
+    <a href="index.html">⚡ QuizSync</a>
+    <a href="hospital.html" class="active">🏥 Hospital</a>
+  </nav>
+  <div class="hstatus">
+    <div class="status-pill"><span class="dot"></span><span>Systems Live</span></div>
+    <div class="ward-pill"><span class="lbl">Ward:</span><span class="val" id="ward-name">General ICU</span></div>
+    <div class="alert-pill">🚨 <span class="val" id="critical-count">3</span><span class="lbl">Critical</span></div>
+  </div>
+</header>
+
+<!-- ===== STATS ROW ===== -->
+<style>
+.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden;transition:.2s;}
+.stat-card:hover{box-shadow:var(--shadow-hover);border-color:var(--blue);}
+.stat-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:linear-gradient(180deg,var(--blue),var(--green));border-radius:4px 0 0 4px;}
+.stat-icon{font-size:1.9rem;flex-shrink:0;}
+.stat-info{display:flex;flex-direction:column;gap:2px;flex:1;}
+.stat-value{font-family:var(--font-head);font-size:1.75rem;font-weight:800;color:var(--text);line-height:1;}
+.stat-label{font-size:.7rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
+.stat-trend{font-family:var(--font-head);font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:50px;align-self:flex-start;white-space:nowrap;}
+.stat-trend.up{color:var(--green);background:var(--green-light);}
+.stat-trend.down{color:var(--red);background:var(--red-light);}
+.stat-trend.flat{color:var(--text-muted);background:#edf2f7;}
+</style>
+<section class="stats-row">
+  <div class="stat-card"><span class="stat-icon">🛏️</span><div class="stat-info"><span class="stat-value" id="stat-beds">14</span><span class="stat-label">Beds Available</span></div><span class="stat-trend up">▲ 2</span></div>
+  <div class="stat-card"><span class="stat-icon">👥</span><div class="stat-info"><span class="stat-value" id="stat-patients">38</span><span class="stat-label">Active Patients</span></div><span class="stat-trend flat">— 0</span></div>
+  <div class="stat-card"><span class="stat-icon">⏳</span><div class="stat-info"><span class="stat-value" id="stat-waiting">7</span><span class="stat-label">In Queue</span></div><span class="stat-trend down">▼ 1</span></div>
+  <div class="stat-card"><span class="stat-icon">✅</span><div class="stat-info"><span class="stat-value" id="stat-discharged">12</span><span class="stat-label">Discharged Today</span></div><span class="stat-trend up">▲ 4</span></div>
+  <div class="stat-card"><span class="stat-icon">🩺</span><div class="stat-info"><span class="stat-value" id="stat-doctors">9</span><span class="stat-label">Doctors On-Duty</span></div><span class="stat-trend flat">— 0</span></div>
+</section>
+
+<!-- ===== MAIN GRID ===== -->
+<style>
+.main-grid{display:grid;grid-template-columns:1fr 360px;gap:22px;align-items:start;}
+.left-col{display:flex;flex-direction:column;gap:22px;}
+.right-col{display:flex;flex-direction:column;gap:22px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden;}
+.card:hover{border-color:rgba(26,115,232,.35);box-shadow:var(--shadow-hover);}
+.card-head{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid var(--border);}
+.card-head-left{display:flex;flex-direction:column;gap:2px;}
+.card-title{font-family:var(--font-head);font-size:1.15rem;font-weight:700;color:var(--text);}
+.card-sub{font-size:.78rem;color:var(--text-muted);}
+.card-foot{padding:14px 22px;border-top:1px solid var(--border);background:var(--surface-alt);display:flex;justify-content:space-between;align-items:center;}
+.hint{font-size:.75rem;color:var(--text-muted);}
+.btn{background:var(--blue);color:#fff;border:none;padding:10px 20px;border-radius:var(--radius-sm);font-family:var(--font-head);font-weight:700;font-size:.85rem;cursor:pointer;transition:.2s;box-shadow:0 2px 8px rgba(26,115,232,.3);}
+.btn:hover{background:var(--blue-dark);transform:translateY(-1px);box-shadow:0 4px 14px rgba(26,115,232,.4);}
+.btn.sm{padding:7px 14px;font-size:.78rem;}
+.badge{padding:3px 10px;border-radius:50px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;}
+.badge.blue{background:var(--blue-light);color:var(--blue);border:1px solid rgba(26,115,232,.3);}
+</style>
+<main class="main-grid">
+<div class="left-col">
+
+<!-- TRIAGE QUEUE -->
+<style>
+.triage-list{display:flex;flex-direction:column;gap:8px;padding:14px 22px;}
+.triage-item{display:grid;grid-template-columns:14px 1fr auto auto;align-items:center;gap:14px;padding:12px 16px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface-alt);cursor:pointer;transition:.18s;}
+.triage-item:hover{background:var(--blue-light);border-color:rgba(26,115,232,.35);transform:translateX(3px);}
+.pdot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+.p-critical{border-left:3px solid var(--red);}   .p-critical .pdot{background:var(--red);}
+.p-urgent  {border-left:3px solid var(--orange);} .p-urgent   .pdot{background:var(--orange);}
+.p-semi    {border-left:3px solid var(--amber);}  .p-semi     .pdot{background:var(--amber);}
+.p-safe    {border-left:3px solid var(--green);}  .p-safe     .pdot{background:var(--green);}
+.pname{font-weight:600;font-size:.93rem;color:var(--text);}
+.pmeta{font-size:.75rem;color:var(--text-muted);margin-top:1px;}
+.pwait{font-family:var(--font-head);font-size:.78rem;font-weight:600;color:var(--text-sec);white-space:nowrap;}
+.pbadge{font-size:.67rem;font-weight:700;padding:3px 10px;border-radius:50px;text-transform:uppercase;white-space:nowrap;}
+.pb-critical{background:var(--red-light);color:var(--red);border:1px solid rgba(229,62,62,.3);}
+.pb-urgent  {background:var(--orange-light);color:var(--orange);border:1px solid rgba(246,130,13,.3);}
+.pb-semi    {background:var(--amber-light);color:var(--amber);border:1px solid rgba(201,148,10,.3);}
+.pb-safe    {background:var(--green-light);color:var(--green);border:1px solid rgba(26,175,108,.3);}
+.priority-legend{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.pl-item{display:flex;align-items:center;gap:5px;font-size:.75rem;color:var(--text-muted);}
+.pl-dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
+</style>
+<div class="card">
+  <div class="card-head">
+    <div class="card-head-left">
+      <span class="card-title">🚑 Triage Queue</span>
+      <span class="card-sub">Patients awaiting assessment — sorted by priority</span>
+    </div>
+    <button class="btn" id="btn-admit">Admit Next Patient</button>
+  </div>
+  <div class="triage-list" id="triage-list"></div>
+  <div class="card-foot">
+    <div class="priority-legend">
+      <span class="pl-item"><span class="pl-dot" style="background:var(--red)"></span>Critical</span>
+      <span class="pl-item"><span class="pl-dot" style="background:var(--orange)"></span>Urgent</span>
+      <span class="pl-item"><span class="pl-dot" style="background:var(--amber)"></span>Semi-Urgent</span>
+      <span class="pl-item"><span class="pl-dot" style="background:var(--green)"></span>Non-Urgent</span>
+    </div>
+  </div>
+</div>
+
+<!-- WARD BED MAP -->
+<style>
+.bed-legend{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.bl-item{display:flex;align-items:center;gap:5px;font-size:.75rem;color:var(--text-muted);}
+.bl-dot{width:10px;height:10px;border-radius:3px;display:inline-block;}
+.ward-sections{padding:18px 22px;display:flex;flex-direction:column;gap:20px;}
+.ward-block{display:flex;flex-direction:column;gap:10px;}
+.ward-hdr{display:flex;justify-content:space-between;align-items:center;}
+.ward-name-lbl{font-family:var(--font-head);font-size:.83rem;font-weight:700;color:var(--text-sec);text-transform:uppercase;letter-spacing:.7px;}
+.ward-cap{font-size:.74rem;color:var(--text-muted);}
+.ward-cap strong{color:var(--blue);}
+.beds-grid{display:flex;flex-wrap:wrap;gap:7px;}
+.bed{width:46px;height:34px;border-radius:var(--radius-sm);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;cursor:pointer;transition:.15s;}
+.bed:hover{transform:scale(1.12);z-index:1;}
+.bed.available  {background:var(--green-light);border-color:rgba(26,175,108,.4);color:var(--green);}
+.bed.occupied   {background:var(--blue-light);border-color:rgba(26,115,232,.4);color:var(--blue);}
+.bed.critical   {background:var(--red-light);border-color:rgba(229,62,62,.4);color:var(--red);animation:blink-bed 1.5s infinite;}
+.bed.maintenance{background:#f1f5f9;border-color:#e2e8f0;color:#a0aec0;cursor:not-allowed;}
+@keyframes blink-bed{0%,100%{opacity:1}50%{opacity:.4}}
+</style>
+<div class="card">
+  <div class="card-head">
+    <div class="card-head-left">
+      <span class="card-title">🛏️ Ward Bed Map</span>
+      <span class="card-sub">Real-time occupancy across all wards</span>
+    </div>
+    <div class="bed-legend">
+      <span class="bl-item"><span class="bl-dot" style="background:var(--green)"></span>Available</span>
+      <span class="bl-item"><span class="bl-dot" style="background:var(--blue)"></span>Occupied</span>
+      <span class="bl-item"><span class="bl-dot" style="background:var(--red)"></span>Critical</span>
+      <span class="bl-item"><span class="bl-dot" style="background:#a0aec0"></span>Maintenance</span>
+    </div>
+  </div>
+  <div class="ward-sections" id="ward-sections"></div>
+</div>
+
+</div><!-- end left-col -->
+
+<!-- RIGHT SIDEBAR -->
+<div class="right-col">
+
+<!-- VITALS MONITOR -->
+<style>
+.vitals-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:14px;}
+.vital-item{display:flex;align-items:center;gap:9px;padding:11px;background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius-sm);transition:.15s;}
+.vital-item:hover{background:var(--blue-light);border-color:rgba(26,115,232,.25);}
+.vital-icon{font-size:1.3rem;flex-shrink:0;}
+.vital-info{display:flex;flex-direction:column;gap:1px;flex:1;min-width:0;}
+.vital-lbl{font-size:.62rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;}
+.vital-val{font-family:var(--font-head);font-size:.97rem;font-weight:700;color:var(--text);line-height:1.2;}
+.vital-val small{font-size:.6rem;color:var(--text-muted);font-weight:400;}
+.vstat{font-size:.62rem;font-weight:700;padding:2px 7px;border-radius:50px;white-space:nowrap;align-self:flex-start;flex-shrink:0;}
+.vstat.ok  {background:var(--green-light);color:var(--green);}
+.vstat.warn{background:var(--amber-light);color:var(--amber);}
+.vstat.bad {background:var(--red-light);color:var(--red);}
+.vitals-foot{padding:10px 14px;background:var(--surface-alt);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+</style>
+<div class="card">
+  <div class="card-head">
+    <span class="card-title">💓 Vitals Monitor</span>
+    <span class="badge blue" id="vitals-pid">P-004</span>
+  </div>
+  <div class="vitals-grid" id="vitals-grid">
+    <div class="vital-item"><span class="vital-icon">❤️</span><div class="vital-info"><span class="vital-lbl">Heart Rate</span><span class="vital-val" id="v-hr">92 <small>bpm</small></span></div><span class="vstat warn" id="v-hr-s">↑ High</span></div>
+    <div class="vital-item"><span class="vital-icon">🫁</span><div class="vital-info"><span class="vital-lbl">SpO₂</span><span class="vital-val" id="v-spo2">96 <small>%</small></span></div><span class="vstat ok" id="v-spo2-s">✓ Normal</span></div>
+    <div class="vital-item"><span class="vital-icon">🩸</span><div class="vital-info"><span class="vital-lbl">Blood Pressure</span><span class="vital-val" id="v-bp">138/88 <small>mmHg</small></span></div><span class="vstat warn" id="v-bp-s">↑ High</span></div>
+    <div class="vital-item"><span class="vital-icon">🌡️</span><div class="vital-info"><span class="vital-lbl">Temperature</span><span class="vital-val" id="v-temp">37.2 <small>°C</small></span></div><span class="vstat ok" id="v-temp-s">✓ Normal</span></div>
+    <div class="vital-item"><span class="vital-icon">🫀</span><div class="vital-info"><span class="vital-lbl">Resp. Rate</span><span class="vital-val" id="v-rr">18 <small>br/min</small></span></div><span class="vstat ok" id="v-rr-s">✓ Normal</span></div>
+    <div class="vital-item"><span class="vital-icon">🩺</span><div class="vital-info"><span class="vital-lbl">Pain Score</span><span class="vital-val" id="v-pain">6 <small>/10</small></span></div><span class="vstat warn" id="v-pain-s">Moderate</span></div>
+  </div>
+  <div class="vitals-foot">
+    <span class="hint">Auto-refreshes every 10s</span>
+    <button class="btn sm" id="btn-cycle">Next Patient</button>
+  </div>
+</div>
+
+<!-- STAFF ON-DUTY -->
+<style>
+.staff-list{display:flex;flex-direction:column;gap:7px;padding:12px 14px;}
+.staff-item{display:flex;align-items:center;gap:11px;padding:9px 11px;background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius-sm);transition:.15s;}
+.staff-item:hover{background:var(--blue-light);border-color:rgba(26,115,232,.25);}
+.avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;background:var(--blue-light);border:1px solid rgba(26,115,232,.25);flex-shrink:0;}
+.sinfo{flex:1;display:flex;flex-direction:column;gap:1px;}
+.sname{font-size:.86rem;font-weight:600;color:var(--text);}
+.srole{font-size:.7rem;color:var(--text-muted);}
+.sdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.sdot.duty    {background:var(--green);box-shadow:0 0 5px var(--green);}
+.sdot.surgery {background:var(--orange);box-shadow:0 0 5px var(--orange);animation:blink 1.5s infinite;}
+.sdot.break   {background:#cbd5e0;}
+</style>
+<div class="card">
+  <div class="card-head">
+    <span class="card-title">👨‍⚕️ Staff On-Duty</span>
+    <span class="badge blue">Shift A</span>
+  </div>
+  <div class="staff-list" id="staff-list"></div>
+</div>
+
+<!-- ACTIVITY LOG -->
+<style>
+.feed{display:flex;flex-direction:column;gap:9px;padding:12px 14px;max-height:220px;overflow-y:auto;}
+.feed-item{border-left:2px solid var(--border);padding-left:10px;display:flex;flex-direction:column;gap:2px;}
+.feed-item:first-child{border-left-color:var(--blue);}
+.ftime{font-size:.68rem;color:var(--text-muted);}
+.ftext{font-size:.78rem;color:var(--text-sec);}
+.ftext strong{color:var(--text);}
+.ftext em{color:var(--blue);font-style:normal;font-weight:600;}
+</style>
+<div class="card">
+  <div class="card-head">
+    <span class="card-title">📋 Activity Log</span>
+  </div>
+  <div class="feed" id="activity-feed"></div>
+</div>
+
+</div><!-- end right-col -->
+</main>
+
+<!-- FOOTER -->
+<style>
+.footer{text-align:center;padding:18px;color:var(--text-muted);font-size:.74rem;border-top:1px solid var(--border);}
+</style>
+<footer class="footer">&copy; 2026 MediSync Hospital Operations. Secured by Zero-Trust &amp; OWASP-Hardened Gateways.</footer>
+</div><!-- end wrap -->
+
+<!-- RESPONSIVE -->
+<style>
+@media(max-width:1100px){.main-grid{grid-template-columns:1fr;}}
+@media(max-width:900px){.stats-row{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:600px){.stats-row{grid-template-columns:1fr 1fr;}.vitals-grid{grid-template-columns:1fr;}.triage-item{grid-template-columns:12px 1fr auto;}.pbadge{display:none;}.nav{display:none;}}
+@media(max-width:400px){.stats-row{grid-template-columns:1fr;}}
+</style>
+
+<script>
+const TRIAGE = [
+  {id:"P-001",name:"Ravi Kumar",age:62,complaint:"Chest pain, shortness of breath",p:"critical",wait:2},
+  {id:"P-002",name:"Sunita Sharma",age:45,complaint:"Severe abdominal pain",p:"urgent",wait:8},
+  {id:"P-003",name:"Arjun Mehta",age:28,complaint:"Head injury after fall",p:"urgent",wait:11},
+  {id:"P-004",name:"Priya Nair",age:35,complaint:"High fever, vomiting",p:"semi",wait:22},
+  {id:"P-005",name:"Mohammed Salim",age:70,complaint:"Dizziness, mild confusion",p:"semi",wait:28},
+  {id:"P-006",name:"Deepa Verma",age:19,complaint:"Ankle sprain",p:"safe",wait:45},
+  {id:"P-007",name:"Rahul Singh",age:33,complaint:"Minor laceration, right hand",p:"safe",wait:52},
+];
+const WARDS=[
+  {name:"ICU",beds:[{id:"ICU-01",s:"critical"},{id:"ICU-02",s:"critical"},{id:"ICU-03",s:"occupied"},{id:"ICU-04",s:"occupied"},{id:"ICU-05",s:"available"},{id:"ICU-06",s:"available"}]},
+  {name:"General Ward A",beds:[{id:"GA-01",s:"occupied"},{id:"GA-02",s:"occupied"},{id:"GA-03",s:"available"},{id:"GA-04",s:"occupied"},{id:"GA-05",s:"available"},{id:"GA-06",s:"available"},{id:"GA-07",s:"occupied"},{id:"GA-08",s:"available"},{id:"GA-09",s:"maintenance"},{id:"GA-10",s:"occupied"}]},
+  {name:"General Ward B",beds:[{id:"GB-01",s:"available"},{id:"GB-02",s:"occupied"},{id:"GB-03",s:"occupied"},{id:"GB-04",s:"available"},{id:"GB-05",s:"occupied"},{id:"GB-06",s:"available"},{id:"GB-07",s:"occupied"},{id:"GB-08",s:"available"}]},
+  {name:"Paediatrics",beds:[{id:"PD-01",s:"occupied"},{id:"PD-02",s:"available"},{id:"PD-03",s:"available"},{id:"PD-04",s:"occupied"},{id:"PD-05",s:"maintenance"},{id:"PD-06",s:"available"}]},
+];
+const STAFF=[
+  {name:"Dr. Ananya Rao",role:"Senior Surgeon",status:"surgery",icon:"👩‍⚕️"},
+  {name:"Dr. Vikram Patel",role:"Cardiologist",status:"duty",icon:"👨‍⚕️"},
+  {name:"Dr. Meera Joshi",role:"Emergency Medicine",status:"duty",icon:"👩‍⚕️"},
+  {name:"Nurse Kavita Singh",role:"Head Nurse, ICU",status:"duty",icon:"👩‍⚕️"},
+  {name:"Nurse Arun Das",role:"Triage Nurse",status:"duty",icon:"👨‍⚕️"},
+  {name:"Dr. Sameer Khan",role:"Paediatrician",status:"break",icon:"👨‍⚕️"},
+];
+const ACTIVITIES=[
+  {time:"Just now",text:"<strong>P-001 Ravi Kumar</strong> flagged as <em>Critical</em> — cardiac team alerted."},
+  {time:"3 min ago",text:"<strong>ICU-05</strong> bed released — cleaned and ready."},
+  {time:"8 min ago",text:"<strong>Dr. Ananya Rao</strong> entered surgery with patient P-009."},
+  {time:"14 min ago",text:"<strong>P-007 Rahul Singh</strong> admitted to General Ward A, bed GA-04."},
+  {time:"22 min ago",text:"<strong>GA-09</strong> marked under maintenance by facilities."},
+  {time:"35 min ago",text:"<strong>12 patients</strong> discharged in morning round."},
+];
+const VITALS=[
+  {pid:"P-004",hr:92,spo2:96,bp:"138/88",temp:37.2,rr:18,pain:6},
+  {pid:"P-001",hr:118,spo2:88,bp:"160/100",temp:38.6,rr:24,pain:9},
+  {pid:"P-002",hr:105,spo2:97,bp:"145/92",temp:37.8,rr:20,pain:8},
+  {pid:"P-003",hr:78,spo2:99,bp:"120/78",temp:36.9,rr:16,pain:5},
+];
+let vIdx=0, queue=[...TRIAGE];
+
+function fw(m){return m<60?m+"m":Math.floor(m/60)+"h "+(m%60)+"m";}
+function clamp(v,a,b){return Math.min(Math.max(v,a),b);}
+function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+
+function renderTriage(){
+  const el=document.getElementById("triage-list");
+  if(!el)return;
+  if(!queue.length){el.innerHTML='<p style="padding:16px;color:var(--text-muted);font-size:.85rem;">No patients in queue.</p>';return;}
+  el.innerHTML=queue.map(p=>`
+    <div class="triage-item p-${p.p}" title="${p.complaint}">
+      <span class="pdot"></span>
+      <div><div class="pname">${p.name} <small style="font-weight:400;color:var(--text-muted)">(${p.age}y)</small></div><div class="pmeta">${p.complaint}</div></div>
+      <span class="pwait">⏱ ${fw(p.wait)}</span>
+      <span class="pbadge pb-${p.p}">${p.p}</span>
+    </div>`).join("");
+  document.getElementById("stat-waiting").textContent=queue.length;
+  document.getElementById("critical-count").textContent=queue.filter(p=>p.p==="critical").length;
+}
+
+function renderWards(){
+  const el=document.getElementById("ward-sections");
+  if(!el)return;
+  el.innerHTML=WARDS.map(w=>{
+    const avail=w.beds.filter(b=>b.s==="available").length;
+    return`<div class="ward-block">
+      <div class="ward-hdr"><span class="ward-name-lbl">${w.name}</span><span class="ward-cap"><strong>${avail}</strong> / ${w.beds.length} available</span></div>
+      <div class="beds-grid">${w.beds.map(b=>`<div class="bed ${b.s}" title="${b.id} — ${b.s}">${b.id.split("-")[1]}</div>`).join("")}</div>
+    </div>`;
+  }).join("");
+  const total=WARDS.flatMap(w=>w.beds).filter(b=>b.s==="available").length;
+  document.getElementById("stat-beds").textContent=total;
+}
+
+function setVStat(id,cls,txt){const e=document.getElementById(id);if(e){e.className="vstat "+cls;e.textContent=txt;}}
+
+function renderVitals(d){
+  document.getElementById("vitals-pid").textContent=d.pid;
+  document.getElementById("v-hr").innerHTML=d.hr+' <small>bpm</small>';
+  document.getElementById("v-spo2").innerHTML=d.spo2+' <small>%</small>';
+  document.getElementById("v-bp").innerHTML=d.bp+' <small>mmHg</small>';
+  document.getElementById("v-temp").innerHTML=d.temp+' <small>°C</small>';
+  document.getElementById("v-rr").innerHTML=d.rr+' <small>br/min</small>';
+  document.getElementById("v-pain").innerHTML=d.pain+' <small>/10</small>';
+  setVStat("v-hr-s",  d.hr>100?"warn":d.hr<60?"warn":"ok", d.hr>100?"↑ High":d.hr<60?"↓ Low":"✓ Normal");
+  setVStat("v-spo2-s",d.spo2<95?"bad":"ok", d.spo2<95?"↓ Low":"✓ Normal");
+  const sys=parseInt(d.bp);
+  setVStat("v-bp-s",  sys>=140?"warn":"ok", sys>=140?"↑ High":"✓ Normal");
+  setVStat("v-temp-s",d.temp>37.5?"warn":"ok", d.temp>37.5?"↑ Fever":"✓ Normal");
+  setVStat("v-rr-s",  d.rr>20||d.rr<12?"warn":"ok", d.rr>20?"↑ High":d.rr<12?"↓ Low":"✓ Normal");
+  setVStat("v-pain-s",d.pain>=7?"bad":d.pain>=4?"warn":"ok", d.pain>=7?"Severe":d.pain>=4?"Moderate":"Mild");
+}
+
+function renderStaff(){
+  const el=document.getElementById("staff-list");
+  if(!el)return;
+  const lbl={duty:"On Duty",surgery:"In Surgery",break:"On Break"};
+  el.innerHTML=STAFF.map(s=>`
+    <div class="staff-item">
+      <div class="avatar">${s.icon}</div>
+      <div class="sinfo"><span class="sname">${s.name}</span><span class="srole">${s.role} — ${lbl[s.status]}</span></div>
+      <div class="sdot ${s.status}"></div>
+    </div>`).join("");
+}
+
+function renderFeed(){
+  const el=document.getElementById("activity-feed");
+  if(!el)return;
+  el.innerHTML=ACTIVITIES.map((a,i)=>`
+    <div class="feed-item" style="${i===0?'border-left-color:var(--blue)':''}">
+      <span class="ftime">${a.time}</span>
+      <p class="ftext">${a.text}</p>
+    </div>`).join("");
+}
+
+function addActivity(txt){ACTIVITIES.unshift({time:"Just now",text:txt});if(ACTIVITIES.length>12)ACTIVITIES.pop();renderFeed();}
+
+document.addEventListener("DOMContentLoaded",()=>{
+  renderTriage();renderWards();renderVitals(VITALS[vIdx]);renderStaff();renderFeed();
+  document.getElementById("btn-admit")?.addEventListener("click",()=>{
+    if(!queue.length){alert("Queue is empty.");return;}
+    const p=queue.shift();renderTriage();
+    addActivity(`<strong>${p.name}</strong> (${p.id}) admitted from triage.`);
+    const el=document.getElementById("stat-patients");if(el)el.textContent=parseInt(el.textContent)+1;
+  });
+  document.getElementById("btn-cycle")?.addEventListener("click",()=>{vIdx=(vIdx+1)%VITALS.length;renderVitals(VITALS[vIdx]);});
+  setInterval(()=>{const d=VITALS[vIdx];d.hr=clamp(d.hr+rand(-3,3),40,180);d.spo2=clamp(d.spo2+rand(-1,1),70,100);d.rr=clamp(d.rr+rand(-1,1),8,40);d.temp=parseFloat((d.temp+(Math.random()*.2-.1)).toFixed(1));renderVitals(d);},10000);
+});
+</script>
+</body>
+</html>
