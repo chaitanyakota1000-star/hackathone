@@ -26,6 +26,25 @@ describe('PowerUpCart Unit Tests', () => {
 
         // 2. Mock window host object
         global.window = {};
+
+        // 3. Mock document and DOM operations to support syncUI checks
+        global.document = {
+            getElementById: jest.fn(() => ({
+                textContent: '',
+                innerHTML: '',
+                appendChild: jest.fn(),
+                classList: {
+                    add: jest.fn(),
+                    remove: jest.fn()
+                },
+                disabled: false
+            })),
+            createElement: jest.fn(() => ({
+                className: '',
+                innerHTML: '',
+                appendChild: jest.fn()
+            }))
+        };
     });
 
     beforeEach(() => {
