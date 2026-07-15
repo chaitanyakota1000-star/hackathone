@@ -4,6 +4,27 @@ const jwt = require('jsonwebtoken');
 // In-memory user database
 const users = [];
 
+// Seed default users for testing and developer local validation
+const salt = bcrypt.genSaltSync(10);
+users.push({
+  id: 1,
+  username: 'patient@hospital.com',
+  password: bcrypt.hashSync('password', salt),
+  role: 'patient'
+});
+users.push({
+  id: 2,
+  username: 'doctor@hospital.com',
+  password: bcrypt.hashSync('password', salt),
+  role: 'doctor'
+});
+users.push({
+  id: 3,
+  username: 'admin@hospital.com',
+  password: bcrypt.hashSync('password', salt),
+  role: 'admin'
+});
+
 class AuthService {
   async register(username, password, role = 'staff') {
     // Check if user already exists

@@ -16,12 +16,22 @@ class AuthController {
 
   async login(req, res) {
     try {
-      const { username, password } = req.body;
-      if (!username || !password) {
-        return res.status(400).json({ error: 'Username and password are required' });
+      const usernameOrEmail = req.body.username || req.body.email;
+      const { password } = req.body;
+      
+      if (!usernameOrEmail || !password) {
+        return res.status(400).json({ error: 'Username or Email and password are required' });
       }
-      const data = await authService.login(username, password);
-      res.status(200).json({ message: 'Login successful', ...data });
+      
+      const data = await authService.login(usernameOrEmail, password);
+      
+      // Flatten response structure so frontend app.js gets token, role, and username directly
+      res.status(200).json({
+        message: 'Login successful',
+        token: data.token,
+        role: data.user.role,
+        username: data.user.username
+      });
     } catch (err) {
       res.status(401).json({ error: err.message });
     }

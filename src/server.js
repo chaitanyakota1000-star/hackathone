@@ -16,6 +16,7 @@ dotenv.config();
 // Custom route imports
 const authRoutes = require('./routes/authRoutes');
 const patientRoutes = require('./routes/patientRoutes');
+const appointmentRoutes = require('./routes/appointmentRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -82,6 +83,7 @@ app.use('/api', apiRouter);
 // Bind custom API routes (Auth & Patients)
 app.use('/api/auth', authRoutes);
 app.use('/api/patients', patientRoutes);
+app.use('/api/appointments', appointmentRoutes);
 
 // Fallback path to index.html for Single-Page operations
 app.get('*', (req, res) => {
